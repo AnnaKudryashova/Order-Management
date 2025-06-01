@@ -1,178 +1,150 @@
 import { NotificationService } from '../../services/NotificationService.js';
 
-interface OrderStateInterface {
-    process(order: Order): void;
-    ship(order: Order): void;
-    deliver(order: Order): void;
-    cancel(order: Order): void;
+export enum OrderStatus {
+    PENDING = 'pending',
+    PROCESSING = 'processing',
+    SHIPPED = 'shipped',
+    DELIVERED = 'delivered',
+    CANCELLED = 'cancelled'
+}
+
+export interface OrderState {
+    setStatus(status: OrderStatus): void;
+    getStatus(): OrderStatus;
 }
 
 export class Order {
-    private state: OrderStateInterface;
-    private status: string;
+    private state: OrderState;
+    private productName: string;
+    private quantity: number;
     private notificationService: NotificationService;
 
-    constructor() {
-        this.state = new PendingState();
-        this.status = 'pending';
-        this.notificationService = NotificationService.getInstance();
+    constructor(productName: string, quantity: number, notificationService: NotificationService) {
+        this.productName = productName;
+        this.quantity = quantity;
+        this.notificationService = notificationService;
+        this.state = new PendingState(this, this.notificationService);
     }
 
-    setState(state: OrderStateInterface): void {
-        this.state = state;
+    public setStatus(status: OrderStatus): void {
+        this.state.setStatus(status);
     }
 
-    setStatus(status: string): void {
-        this.status = status;
+    public getStatus(): OrderStatus {
+        return this.state.getStatus();
     }
 
-    getStatus(): string {
-        return this.status;
+    public getProductName(): string {
+        return this.productName;
     }
 
-    process(): void {
-        this.state.process(this);
+    public getQuantity(): number {
+        return this.quantity;
     }
 
-    ship(): void {
-        this.state.ship(this);
-    }
-
-    deliver(): void {
-        this.state.deliver(this);
-    }
-
-    cancel(): void {
-        this.state.cancel(this);
+    public transitionTo(newState: OrderState): void {
+        this.state = newState;
     }
 }
 
-class PendingState implements OrderStateInterface {
-    private notificationService: NotificationService;
+abstract class AbstractOrderState implements OrderState {
+    protected order: Order;
+    protected notificationService: NotificationService;
 
-    constructor() {
-        this.notificationService = NotificationService.getInstance();
+    constructor(order: Order, notificationService: NotificationService) {
+        this.order = order;
+        this.notificationService = notificationService;
     }
 
-    process(order: Order): void {
-        order.setState(new ProcessingState());
-        order.setStatus('processing');
-        this.notificationService.info('Order is now being processed');
-    }
+    abstract setStatus(status: OrderStatus): void;
+    abstract getStatus(): OrderStatus;
 
-    ship(order: Order): void {
-        this.notificationService.error('Cannot ship pending order');
-    }
-
-    deliver(order: Order): void {
-        this.notificationService.error('Cannot deliver pending order');
-    }
-
-    cancel(order: Order): void {
-        order.setState(new CancelledState());
-        order.setStatus('cancelled');
-        this.notificationService.warning('Order has been cancelled');
+    protected handleInvalidTransition(currentStatus: OrderStatus, targetStatus: OrderStatus): void {
+        const errorMessage = `Cannot change status from ${currentStatus} to ${targetStatus}. Invalid state transition.`;
+        this.notificationService.error(errorMessage);
+        throw new Error(errorMessage);
     }
 }
 
-class ProcessingState implements OrderStateInterface {
-    private notificationService: NotificationService;
-
-    constructor() {
-        this.notificationService = NotificationService.getInstance();
+class PendingState extends AbstractOrderState {
+    setStatus(status: OrderStatus): void {
+        switch (status) {
+            case OrderStatus.PROCESSING:
+                this.order.transitionTo(new ProcessingState(this.order, this.notificationService));
+                this.notificationService.info('Order is now being processed');
+                break;
+            case OrderStatus.CANCELLED:
+                this.order.transitionTo(new CancelledState(this.order, this.notificationService));
+                this.notificationService.info('Order has been cancelled');
+                break;
+            default:
+                this.handleInvalidTransition(OrderStatus.PENDING, status);
+        }
     }
 
-    process(order: Order): void {
-        this.notificationService.warning('Order is already being processed');
-    }
-
-    ship(order: Order): void {
-        order.setState(new ShippedState());
-        order.setStatus('shipped');
-        this.notificationService.success('Order has been shipped');
-    }
-
-    deliver(order: Order): void {
-        this.notificationService.error('Cannot deliver processing order');
-    }
-
-    cancel(order: Order): void {
-        order.setState(new CancelledState());
-        order.setStatus('cancelled');
-        this.notificationService.warning('Order has been cancelled');
+    getStatus(): OrderStatus {
+        return OrderStatus.PENDING;
     }
 }
 
-class ShippedState implements OrderStateInterface {
-    private notificationService: NotificationService;
-
-    constructor() {
-        this.notificationService = NotificationService.getInstance();
+class ProcessingState extends AbstractOrderState {
+    setStatus(status: OrderStatus): void {
+        switch (status) {
+            case OrderStatus.SHIPPED:
+                this.order.transitionTo(new ShippedState(this.order, this.notificationService));
+                this.notificationService.info('Order has been shipped');
+                break;
+            case OrderStatus.CANCELLED:
+                this.order.transitionTo(new CancelledState(this.order, this.notificationService));
+                this.notificationService.info('Order has been cancelled');
+                break;
+            default:
+                this.handleInvalidTransition(OrderStatus.PROCESSING, status);
+        }
     }
 
-    process(order: Order): void {
-        this.notificationService.error('Cannot process shipped order');
-    }
-
-    ship(order: Order): void {
-        this.notificationService.warning('Order is already shipped');
-    }
-
-    deliver(order: Order): void {
-        order.setState(new DeliveredState());
-        order.setStatus('delivered');
-        this.notificationService.success('Order has been delivered');
-    }
-
-    cancel(order: Order): void {
-        this.notificationService.error('Cannot cancel shipped order');
+    getStatus(): OrderStatus {
+        return OrderStatus.PROCESSING;
     }
 }
 
-class DeliveredState implements OrderStateInterface {
-    private notificationService: NotificationService;
-
-    constructor() {
-        this.notificationService = NotificationService.getInstance();
+class ShippedState extends AbstractOrderState {
+    setStatus(status: OrderStatus): void {
+        switch (status) {
+            case OrderStatus.DELIVERED:
+                this.order.transitionTo(new DeliveredState(this.order, this.notificationService));
+                this.notificationService.info('Order has been delivered');
+                break;
+            case OrderStatus.CANCELLED:
+                this.order.transitionTo(new CancelledState(this.order, this.notificationService));
+                this.notificationService.info('Order has been cancelled');
+                break;
+            default:
+                this.handleInvalidTransition(OrderStatus.SHIPPED, status);
+        }
     }
 
-    process(order: Order): void {
-        this.notificationService.error('Cannot process delivered order');
-    }
-
-    ship(order: Order): void {
-        this.notificationService.error('Cannot ship delivered order');
-    }
-
-    deliver(order: Order): void {
-        this.notificationService.warning('Order is already delivered');
-    }
-
-    cancel(order: Order): void {
-        this.notificationService.error('Cannot cancel delivered order');
+    getStatus(): OrderStatus {
+        return OrderStatus.SHIPPED;
     }
 }
 
-class CancelledState implements OrderStateInterface {
-    private notificationService: NotificationService;
-
-    constructor() {
-        this.notificationService = NotificationService.getInstance();
+class DeliveredState extends AbstractOrderState {
+    setStatus(status: OrderStatus): void {
+        this.handleInvalidTransition(OrderStatus.DELIVERED, status);
     }
 
-    process(order: Order): void {
-        this.notificationService.error('Cannot process cancelled order');
+    getStatus(): OrderStatus {
+        return OrderStatus.DELIVERED;
+    }
+}
+
+class CancelledState extends AbstractOrderState {
+    setStatus(status: OrderStatus): void {
+        this.handleInvalidTransition(OrderStatus.CANCELLED, status);
     }
 
-    ship(order: Order): void {
-        this.notificationService.error('Cannot ship cancelled order');
+    getStatus(): OrderStatus {
+        return OrderStatus.CANCELLED;
     }
-
-    deliver(order: Order): void {
-        this.notificationService.error('Cannot deliver cancelled order');
-    }
-
-    cancel(order: Order): void {
-        this.notificationService.warning('Order is already cancelled');
-    }
-} 
+}

@@ -1,6 +1,6 @@
 // Import pattern implementations
 import { OrderBuilder } from './patterns/builder/OrderBuilder.js';
-import { Order as StateOrder } from './patterns/state/OrderState.js';
+import { Order as StateOrder, OrderStatus } from './patterns/state/OrderState.js';
 import { Order as ObserverOrder, CustomerObserver, WarehouseObserver } from './patterns/observer/OrderObserver.js';
 import { OrderFacade } from './patterns/facade/OrderFacade.js';
 import { PaymentProcessor } from './patterns/strategy/PaymentStrategy.js';
@@ -9,137 +9,134 @@ import { NotificationService } from './services/NotificationService.js';
 import { ProductCatalog } from './models/Product.js';
 import { OrderManager } from './models/OrderManager.js';
 
-// Initialize UI elements
-document.addEventListener('DOMContentLoaded', () => {
-    const notificationService = NotificationService.getInstance();
-    const productCatalog = ProductCatalog.getInstance();
-    const orderManager = OrderManager.getInstance();
-    
-    notificationService.info('System initialized');
-    
-    const homeBtn = document.getElementById('homeBtn');
-    const ordersBtn = document.getElementById('ordersBtn');
-    const createOrderBtn = document.getElementById('createOrderBtn');
-    const mainContent = document.getElementById('mainContent');
+// Type definitions
+interface SystemStatus {
+    totalOrders: number;
+    pendingOrders: number;
+    processingOrders: number;
+    shippedOrders: number;
+    deliveredOrders: number;
+    cancelledOrders: number;
+    totalRevenue: number;
+}
 
-    if (!homeBtn || !ordersBtn || !createOrderBtn || !mainContent) {
-        notificationService.error('Required DOM elements not found');
-        return;
+interface OrderState {
+    color: string;
+    label: string;
+}
+
+type OrderStates = Record<string, OrderState>;
+
+// Display strategies
+const displayStrategies = {
+    simple: (systemStatus: SystemStatus): string => `
+        <h3>Simple Overview</h3>
+        <div class="dashboard-cards">
+            <div class="dashboard-card">
+                <h4>Total Orders</h4>
+                <p class="number">${systemStatus.totalOrders}</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>Total Revenue</h4>
+                <p class="number">$${systemStatus.totalRevenue.toFixed(2)}</p>
+            </div>
+        </div>
+    `,
+
+    detailed: (systemStatus: SystemStatus, orders: any[]): string => `
+        <h3>Detailed Overview</h3>
+        <div class="dashboard-cards">
+            <div class="dashboard-card">
+                <h4>Total Orders</h4>
+                <p class="number">${systemStatus.totalOrders}</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>Total Revenue</h4>
+                <p class="number">$${systemStatus.totalRevenue.toFixed(2)}</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>Pending Orders</h4>
+                <p class="number">${systemStatus.pendingOrders}</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>Processing Orders</h4>
+                <p class="number">${systemStatus.processingOrders}</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>Shipped Orders</h4>
+                <p class="number">${systemStatus.shippedOrders}</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>Delivered Orders</h4>
+                <p class="number">${systemStatus.deliveredOrders}</p>
+            </div>
+            <div class="dashboard-card">
+                <h4>Cancelled Orders</h4>
+                <p class="number">${systemStatus.cancelledOrders}</p>
+            </div>
+        </div>
+        <div class="recent-orders">
+            <h4>Recent Orders</h4>
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${orders.slice(-5).map(order => `
+                        <tr>
+                            <td>#${order.id}</td>
+                            <td>${order.product.name}</td>
+                            <td>${order.quantity}</td>
+                            <td>$${order.totalAmount.toFixed(2)}</td>
+                            <td><span class="status-badge ${order.status}">${order.status}</span></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `
+};
+
+// UI Controller class to handle all UI-related operations
+class UIController {
+    private readonly notificationService: NotificationService;
+    private readonly productCatalog: ProductCatalog;
+    private readonly orderManager: OrderManager;
+    private readonly orderFacade: OrderFacade;
+    private readonly paymentProcessor: PaymentProcessor;
+    private readonly orderValidator: OrderValidator;
+    protected readonly mainContent: HTMLElement | null;
+
+    constructor() {
+        this.notificationService = NotificationService.getInstance();
+        this.productCatalog = ProductCatalog.getInstance();
+        this.orderManager = OrderManager.getInstance();
+        this.orderFacade = new OrderFacade();
+        this.paymentProcessor = new PaymentProcessor(PaymentProcessor.createStrategy('credit'));
+        this.orderValidator = new OrderValidator();
+        this.mainContent = document.getElementById('mainContent');
     }
 
-    // Initialize pattern implementations
-    const orderFacade = new OrderFacade();
-    const paymentProcessor = new PaymentProcessor(PaymentProcessor.createStrategy('credit'));
-    const orderValidator = new OrderValidator();
-
-    // Define display strategies
-    const displayStrategies = {
-        simple: (systemStatus: any) => `
-            <h3>Simple Overview</h3>
-            <div class="dashboard-cards">
-                <div class="dashboard-card">
-                    <h4>Total Orders</h4>
-                    <p class="number">${systemStatus.totalOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Total Revenue</h4>
-                    <p class="number">$${systemStatus.totalRevenue.toFixed(2)}</p>
-                </div>
-            </div>
-        `,
-        
-        detailed: (systemStatus: any, orders: any[]) => `
-            <h3>Detailed Overview</h3>
-            <div class="dashboard-cards">
-                <div class="dashboard-card">
-                    <h4>Total Orders</h4>
-                    <p class="number">${systemStatus.totalOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Total Revenue</h4>
-                    <p class="number">$${systemStatus.totalRevenue.toFixed(2)}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Pending Orders</h4>
-                    <p class="number">${systemStatus.pendingOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Processing Orders</h4>
-                    <p class="number">${systemStatus.processingOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Shipped Orders</h4>
-                    <p class="number">${systemStatus.shippedOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Delivered Orders</h4>
-                    <p class="number">${systemStatus.deliveredOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Cancelled Orders</h4>
-                    <p class="number">${systemStatus.cancelledOrders}</p>
-                </div>
-            </div>
-            <div class="recent-orders">
-                <h4>Recent Orders</h4>
-                <table class="orders-table">
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Product</th>
-                            <th>Quantity</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${orders.slice(-5).map(order => `
-                            <tr>
-                                <td>#${order.id}</td>
-                                <td>${order.product.name}</td>
-                                <td>${order.quantity}</td>
-                                <td>$${order.totalAmount.toFixed(2)}</td>
-                                <td><span class="status-badge ${order.status}">${order.status}</span></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `
-    };
-
-    // Make display strategies available globally
-    (window as any).displayStrategies = displayStrategies;
-
-    // Event listeners
-    homeBtn.addEventListener('click', () => {
-        notificationService.info('Navigating to home');
-        
-        const orders = orderManager.getOrders();
-        const systemStatus = {
+    private getSystemStatus(): SystemStatus {
+        const orders = this.orderManager.getOrders();
+        return {
             totalOrders: orders.length,
-            pendingOrders: orderManager.getOrdersByStatus('pending').length,
-            processingOrders: orderManager.getOrdersByStatus('processing').length,
-            shippedOrders: orderManager.getOrdersByStatus('shipped').length,
-            deliveredOrders: orderManager.getOrdersByStatus('delivered').length,
-            cancelledOrders: orderManager.getOrdersByStatus('cancelled').length,
+            pendingOrders: this.orderManager.getOrdersByStatus(OrderStatus.PENDING).length,
+            processingOrders: this.orderManager.getOrdersByStatus(OrderStatus.PROCESSING).length,
+            shippedOrders: this.orderManager.getOrdersByStatus(OrderStatus.SHIPPED).length,
+            deliveredOrders: this.orderManager.getOrdersByStatus(OrderStatus.DELIVERED).length,
+            cancelledOrders: this.orderManager.getOrdersByStatus(OrderStatus.CANCELLED).length,
             totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0)
         };
+    }
 
-        mainContent.innerHTML = `
-            <h2>Welcome to Order Management System</h2>
-            <div class="dashboard">
-                <div class="summary-toggle">
-                    <button id="simpleViewBtn">Simple View</button>
-                    <button id="detailedViewBtn">Detailed View</button>
-                </div>
-                <div id="summaryContent">
-                    ${displayStrategies.simple(systemStatus)}
-                </div>
-            </div>
-        `;
-
-        // Add event listeners for view switching
+    private setupViewSwitching(systemStatus: SystemStatus, orders: any[]): void {
         const simpleViewBtn = document.getElementById('simpleViewBtn');
         const detailedViewBtn = document.getElementById('detailedViewBtn');
         const summaryContent = document.getElementById('summaryContent');
@@ -155,13 +152,92 @@ document.addEventListener('DOMContentLoaded', () => {
                 summaryContent.innerHTML = displayStrategies.detailed(systemStatus, orders);
             });
         }
-    });
+    }
 
-    ordersBtn.addEventListener('click', () => {
-        notificationService.info('Loading orders list');
-        
-        const orders = orderManager.getOrders();
-        const orderStates = {
+    private setupOrderForm(): void {
+        const form = document.getElementById('orderForm');
+        if (!form) return;
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const productId = parseInt((document.getElementById('productId') as HTMLSelectElement).value);
+            const quantity = parseInt((document.getElementById('quantity') as HTMLInputElement).value);
+            const paymentMethod = (document.getElementById('paymentMethod') as HTMLSelectElement).value;
+
+            const product = this.productCatalog.getProductById(productId);
+            if (!product) {
+                this.notificationService.error('Invalid product selected');
+                return;
+            }
+
+            const isValid = this.orderValidator.validateOrder({
+                productName: product.name,
+                quantity,
+                paymentMethod
+            });
+
+            if (isValid) {
+                const orderDetails = this.orderManager.createOrder(product, quantity, paymentMethod);
+                this.paymentProcessor.setStrategy(PaymentProcessor.createStrategy(paymentMethod));
+                this.paymentProcessor.processPayment(orderDetails.totalAmount);
+
+                this.notificationService.success('Order created successfully!');
+                if (this.mainContent) {
+                    this.mainContent.innerHTML = '<h2>Order Created Successfully!</h2>';
+                }
+            } else {
+                this.notificationService.error('Order validation failed');
+            }
+        });
+    }
+
+    private setupTotalAmountCalculator(): void {
+        (window as any).updateTotal = () => {
+            const productSelect = document.getElementById('productId') as HTMLSelectElement;
+            const quantityInput = document.getElementById('quantity') as HTMLInputElement;
+            const totalAmountSpan = document.getElementById('totalAmount');
+
+            if (productSelect.value && quantityInput.value) {
+                const price = parseFloat(productSelect.options[productSelect.selectedIndex].dataset.price || '0');
+                const quantity = parseInt(quantityInput.value);
+                const total = price * quantity;
+                if (totalAmountSpan) {
+                    totalAmountSpan.textContent = `$${total.toFixed(2)}`;
+                }
+            }
+        };
+    }
+
+    public initializeHomeView(): void {
+        if (!this.mainContent) return;
+
+        this.notificationService.info('Navigating to home');
+        const orders = this.orderManager.getOrders();
+        const systemStatus = this.getSystemStatus();
+
+        this.mainContent.innerHTML = `
+            <h2>Welcome to Order Management System</h2>
+            <div class="dashboard">
+                <div class="summary-toggle">
+                    <button id="simpleViewBtn">Simple View</button>
+                    <button id="detailedViewBtn">Detailed View</button>
+                </div>
+                <div id="summaryContent">
+                    ${displayStrategies.simple(systemStatus)}
+                </div>
+            </div>
+        `;
+
+        this.setupViewSwitching(systemStatus, orders);
+    }
+
+    public initializeOrdersView(): void {
+        if (!this.mainContent) return;
+
+        this.notificationService.info('Loading orders list');
+        const orders = this.orderManager.getOrders();
+        const orderStates: OrderStates = {
             all: { color: '#808080', label: 'All Orders' },
             pending: { color: '#ffd700', label: 'Pending' },
             processing: { color: '#87ceeb', label: 'Processing' },
@@ -170,38 +246,56 @@ document.addEventListener('DOMContentLoaded', () => {
             cancelled: { color: '#ffb6c1', label: 'Cancelled' }
         };
 
-        const updateOrderStatus = (orderId: number, status: string) => {
-            orderManager.updateOrderStatus(orderId, status);
-            ordersBtn.click(); // Refresh the orders list
-        };
+        const updateOrderStatus = (orderId: string, status: string) => {
+            const order = this.orderManager.getOrder(orderId);
+            if (!order) {
+                this.notificationService.error('Order not found');
+                return;
+            }
 
-        const filterOrders = (status: string) => {
-            const filteredOrders = status === 'all' 
-                ? orders 
-                : orders.filter(order => order.status === status);
-            
-            const ordersList = document.getElementById('ordersList');
-            if (ordersList) {
-                ordersList.innerHTML = filteredOrders.map(order => `
-                    <div class="order-item">
-                        <h3>Order #${order.id}</h3>
-                        <p>Product: ${order.product.name}</p>
-                        <p>Quantity: ${order.quantity}</p>
-                        <p>Total Amount: $${order.totalAmount.toFixed(2)}</p>
-                        <p>Payment Method: ${order.paymentMethod}</p>
-                        <p>Status: <span class="status-badge ${order.status}">${order.status}</span></p>
-                        <div class="order-actions">
-                            <button onclick="updateOrderStatus(${order.id}, 'processing')">Process</button>
-                            <button onclick="updateOrderStatus(${order.id}, 'shipped')">Ship</button>
-                            <button onclick="updateOrderStatus(${order.id}, 'delivered')">Deliver</button>
-                            <button onclick="updateOrderStatus(${order.id}, 'cancelled')">Cancel</button>
-                        </div>
-                    </div>
-                `).join('');
+            try {
+                const orderFacade = new OrderFacade(
+                    order.product.name,
+                    order.quantity,
+                    order.status
+                );
+
+                switch (status) {
+                    case OrderStatus.PROCESSING:
+                        orderFacade.processOrder();
+                        break;
+                    case OrderStatus.SHIPPED:
+                        orderFacade.shipOrder();
+                        break;
+                    case OrderStatus.DELIVERED:
+                        orderFacade.deliverOrder();
+                        break;
+                    case OrderStatus.CANCELLED:
+                        orderFacade.cancelOrder();
+                        break;
+                }
+
+                // Update the order in the manager with the new status
+                this.orderManager.updateOrder(orderId, orderFacade.getOrder());
+                this.initializeOrdersView();
+            } catch (error: any) {
+                console.error('Error updating order status:', error);
+                this.notificationService.error(error.message || 'Failed to update order status');
             }
         };
 
-        mainContent.innerHTML = `
+        const filterOrders = (status: string) => {
+            const filteredOrders = status === 'all'
+                ? orders
+                : orders.filter(order => order.status === status);
+
+            const ordersList = document.getElementById('ordersList');
+            if (ordersList) {
+                ordersList.innerHTML = this.renderOrdersList(filteredOrders, updateOrderStatus);
+            }
+        };
+
+        this.mainContent.innerHTML = `
             <h2>Orders List</h2>
             <div class="order-states">
                 ${Object.entries(orderStates).map(([state, { color, label }]) => `
@@ -211,35 +305,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 `).join('')}
             </div>
             <div id="ordersList">
-                ${orders.map(order => `
-                    <div class="order-item">
-                        <h3>Order #${order.id}</h3>
-                        <p>Product: ${order.product.name}</p>
-                        <p>Quantity: ${order.quantity}</p>
-                        <p>Total Amount: $${order.totalAmount.toFixed(2)}</p>
-                        <p>Payment Method: ${order.paymentMethod}</p>
-                        <p>Status: <span class="status-badge ${order.status}">${order.status}</span></p>
-                        <div class="order-actions">
-                            <button onclick="updateOrderStatus(${order.id}, 'processing')">Process</button>
-                            <button onclick="updateOrderStatus(${order.id}, 'shipped')">Ship</button>
-                            <button onclick="updateOrderStatus(${order.id}, 'delivered')">Deliver</button>
-                            <button onclick="updateOrderStatus(${order.id}, 'cancelled')">Cancel</button>
-                        </div>
-                    </div>
-                `).join('')}
+                ${this.renderOrdersList(orders, updateOrderStatus)}
             </div>
         `;
 
         // Make functions available globally
         (window as any).updateOrderStatus = updateOrderStatus;
         (window as any).filterOrders = filterOrders;
-    });
+    }
 
-    createOrderBtn.addEventListener('click', () => {
-        notificationService.info('Opening order creation form');
-        const products = productCatalog.getProducts();
-        
-        mainContent.innerHTML = `
+    private renderOrdersList(orders: any[], updateOrderStatus: (id: string, status: string) => void): string {
+        return orders.map(order => `
+            <div class="order-item">
+                <h3>Order #${order.id}</h3>
+                <p>Product: ${order.product.name}</p>
+                <p>Quantity: ${order.quantity}</p>
+                <p>Total Amount: $${order.totalAmount.toFixed(2)}</p>
+                <p>Payment Method: ${order.paymentMethod}</p>
+                <p>Status: <span class="status-badge ${order.status}">${order.status}</span></p>
+                <div class="order-actions">
+                    <button onclick="updateOrderStatus('${order.id}', '${OrderStatus.PROCESSING}')">Process</button>
+                    <button onclick="updateOrderStatus('${order.id}', '${OrderStatus.SHIPPED}')">Ship</button>
+                    <button onclick="updateOrderStatus('${order.id}', '${OrderStatus.DELIVERED}')">Deliver</button>
+                    <button onclick="updateOrderStatus('${order.id}', '${OrderStatus.CANCELLED}')">Cancel</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    public initializeCreateOrderView(): void {
+        if (!this.mainContent) return;
+
+        this.notificationService.info('Opening order creation form');
+        const products = this.productCatalog.getProducts();
+
+        this.mainContent.innerHTML = `
             <h2>Create New Order</h2>
             <form id="orderForm">
                 <div>
@@ -273,61 +373,31 @@ document.addEventListener('DOMContentLoaded', () => {
             </form>
         `;
 
-        // Add updateTotal function to window
-        (window as any).updateTotal = () => {
-            const productSelect = document.getElementById('productId') as HTMLSelectElement;
-            const quantityInput = document.getElementById('quantity') as HTMLInputElement;
-            const totalAmountSpan = document.getElementById('totalAmount');
-            
-            if (productSelect.value && quantityInput.value) {
-                const price = parseFloat(productSelect.options[productSelect.selectedIndex].dataset.price || '0');
-                const quantity = parseInt(quantityInput.value);
-                const total = price * quantity;
-                if (totalAmountSpan) {
-                    totalAmountSpan.textContent = `$${total.toFixed(2)}`;
-                }
-            }
-        };
+        this.setupTotalAmountCalculator();
+        this.setupOrderForm();
+    }
+}
 
-        const form = document.getElementById('orderForm');
-        if (form) {
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const productId = parseInt((document.getElementById('productId') as HTMLSelectElement).value);
-                const quantity = parseInt((document.getElementById('quantity') as HTMLInputElement).value);
-                const paymentMethod = (document.getElementById('paymentMethod') as HTMLSelectElement).value;
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    const ui = new UIController();
 
-                const product = productCatalog.getProductById(productId);
-                if (!product) {
-                    notificationService.error('Invalid product selected');
-                    return;
-                }
+    const homeBtn = document.getElementById('homeBtn');
+    const ordersBtn = document.getElementById('ordersBtn');
+    const createOrderBtn = document.getElementById('createOrderBtn');
 
-                // Validate order using Chain of Responsibility
-                const isValid = orderValidator.validateOrder({ 
-                    productName: product.name, 
-                    quantity, 
-                    paymentMethod 
-                });
-                
-                if (isValid) {
-                    // Create order using OrderManager
-                    const orderDetails = orderManager.createOrder(product, quantity, paymentMethod);
-                    
-                    // Process payment using Strategy pattern
-                    paymentProcessor.setStrategy(PaymentProcessor.createStrategy(paymentMethod));
-                    paymentProcessor.processPayment(orderDetails.totalAmount);
-                    
-                    notificationService.success('Order created successfully!');
-                    mainContent.innerHTML = '<h2>Order Created Successfully!</h2>';
-                } else {
-                    notificationService.error('Order validation failed');
-                }
-            });
-        }
-    });
+    if (!homeBtn || !ordersBtn || !createOrderBtn) {
+        console.error('Required DOM elements not found');
+        return;
+    }
 
-    // Set initial content
-    mainContent.innerHTML = '<h2>Welcome to Order Management System</h2>';
-}); 
+    // Initialize views
+    ui.initializeHomeView();
+    ui.initializeOrdersView();
+    ui.initializeCreateOrderView();
+
+    // Add event listeners
+    homeBtn.addEventListener('click', () => ui.initializeHomeView());
+    ordersBtn.addEventListener('click', () => ui.initializeOrdersView());
+    createOrderBtn.addEventListener('click', () => ui.initializeCreateOrderView());
+});

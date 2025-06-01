@@ -1,6 +1,7 @@
 import { Product } from './Product.js';
 import { Order as ObserverOrder } from '../patterns/observer/OrderObserver.js';
 import { NotificationService } from '../services/NotificationService.js';
+import { Order as StateOrder, OrderStatus } from '../patterns/state/OrderState.js';
 
 export interface OrderDetails {
     id: number;
@@ -8,8 +9,9 @@ export interface OrderDetails {
     quantity: number;
     totalAmount: number;
     paymentMethod: string;
-    status: string;
-    order: ObserverOrder;
+    status: OrderStatus;
+    stateOrder: StateOrder;
+    observerOrder: ObserverOrder;
 }
 
 export class OrderManager {
@@ -31,7 +33,8 @@ export class OrderManager {
 
     public createOrder(product: Product, quantity: number, paymentMethod: string): OrderDetails {
         const totalAmount = product.price * quantity;
-        const order = new ObserverOrder(product.name, quantity);
+        const stateOrder = new StateOrder(product.name, quantity, this.notificationService);
+        const observerOrder = new ObserverOrder(product.name, quantity);
         
         const orderDetails: OrderDetails = {
             id: this.nextOrderId++,
@@ -39,8 +42,9 @@ export class OrderManager {
             quantity,
             totalAmount,
             paymentMethod,
-            status: 'pending',
-            order
+            status: OrderStatus.PENDING,
+            stateOrder,
+            observerOrder
         };
 
         this.orders.push(orderDetails);
@@ -52,20 +56,21 @@ export class OrderManager {
         return this.orders;
     }
 
-    public getOrderById(id: number): OrderDetails | undefined {
-        return this.orders.find(order => order.id === id);
+    public getOrder(id: string): OrderDetails | undefined {
+        return this.orders.find(order => order.id.toString() === id);
     }
 
-    public updateOrderStatus(id: number, status: string): void {
-        const order = this.getOrderById(id);
+    public updateOrder(id: string, stateOrder: StateOrder): void {
+        const order = this.getOrder(id);
         if (order) {
-            order.status = status;
-            order.order.setStatus(status);
-            this.notificationService.info(`Order #${id} status updated to ${status}`);
+            order.stateOrder = stateOrder;
+            order.status = stateOrder.getStatus();
+            order.observerOrder.setStatus(stateOrder.getStatus());
+            this.notificationService.info(`Order #${id} status updated to ${stateOrder.getStatus()}`);
         }
     }
 
-    public getOrdersByStatus(status: string): OrderDetails[] {
+    public getOrdersByStatus(status: OrderStatus): OrderDetails[] {
         return this.orders.filter(order => order.status === status);
     }
 } 
