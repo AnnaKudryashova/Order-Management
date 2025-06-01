@@ -1,0 +1,25 @@
+{
+  "name": "order_management",
+  "version": "1.0.0",
+  "description": "E-commerce Order Management System demonstrating design patterns",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node server.js",
+    "dev": "tsc -w"
+  },
+  "keywords": ["design-patterns", "typescript"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.11.24",
+    "jest": "^29.7.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
