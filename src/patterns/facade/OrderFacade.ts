@@ -63,7 +63,7 @@ export class OrderFacade {
         this.observerOrder = new ObserverOrder(productName, quantity);
         this.observerOrder.attach(this.customerObserver);
         this.observerOrder.attach(this.warehouseObserver);
-        this.observerOrder.setStatus('processing');
+        this.observerOrder.setStatus(OrderStatus.PROCESSING);
 
         this.notificationService.success('Order created successfully: ' + order.getDetails());
     }
@@ -71,7 +71,7 @@ export class OrderFacade {
     processOrder(): void {
         try {
             this.stateOrder.setStatus(OrderStatus.PROCESSING);
-            this.observerOrder.setStatus('processing');
+            this.observerOrder.setStatus(OrderStatus.PROCESSING);
             this.notificationService.info('Order is being processed');
         } catch (error: any) {
             this.notificationService.error('Invalid state transition: ' + error.message);
@@ -82,7 +82,7 @@ export class OrderFacade {
     shipOrder(): void {
         try {
             this.stateOrder.setStatus(OrderStatus.SHIPPED);
-            this.observerOrder.setStatus('shipped');
+            this.observerOrder.setStatus(OrderStatus.SHIPPED);
             this.notificationService.success('Order has been shipped');
         } catch (error: any) {
             this.notificationService.error('Invalid state transition: ' + error.message);
@@ -93,7 +93,7 @@ export class OrderFacade {
     deliverOrder(): void {
         try {
             this.stateOrder.setStatus(OrderStatus.DELIVERED);
-            this.observerOrder.setStatus('delivered');
+            this.observerOrder.setStatus(OrderStatus.DELIVERED);
             this.notificationService.success('Order has been delivered');
         } catch (error: any) {
             this.notificationService.error('Invalid state transition: ' + error.message);
@@ -104,7 +104,7 @@ export class OrderFacade {
     cancelOrder(): void {
         try {
             this.stateOrder.setStatus(OrderStatus.CANCELLED);
-            this.observerOrder.setStatus('cancelled');
+            this.observerOrder.setStatus(OrderStatus.CANCELLED);
             this.notificationService.warning('Order has been cancelled');
         } catch (error: any) {
             this.notificationService.error('Invalid state transition: ' + error.message);
@@ -112,7 +112,7 @@ export class OrderFacade {
         }
     }
 
-    getOrderStatus(): string {
+    getOrderStatus(): OrderStatus {
         return this.stateOrder.getStatus();
     }
 

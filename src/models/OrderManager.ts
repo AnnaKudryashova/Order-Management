@@ -2,6 +2,7 @@ import { Product } from './Product.js';
 import { Order as ObserverOrder } from '../patterns/observer/OrderObserver.js';
 import { NotificationService } from '../services/NotificationService.js';
 import { Order as StateOrder, OrderStatus } from '../patterns/state/OrderState.js';
+import { OrderFacade } from '../patterns/facade/OrderFacade.js';
 
 export interface OrderDetails {
     id: number;
@@ -33,8 +34,10 @@ export class OrderManager {
 
     public createOrder(product: Product, quantity: number, paymentMethod: string): OrderDetails {
         const totalAmount = product.price * quantity;
-        const stateOrder = new StateOrder(product.name, quantity, this.notificationService);
-        const observerOrder = new ObserverOrder(product.name, quantity);
+        
+        // Use Facade to create and initialize the order
+        const orderFacade = new OrderFacade();
+        orderFacade.createOrder(product.name, quantity, paymentMethod);
         
         const orderDetails: OrderDetails = {
             id: this.nextOrderId++,
@@ -43,8 +46,8 @@ export class OrderManager {
             totalAmount,
             paymentMethod,
             status: OrderStatus.PENDING,
-            stateOrder,
-            observerOrder
+            stateOrder: orderFacade.getOrder(),
+            observerOrder: new ObserverOrder(product.name, quantity)
         };
 
         this.orders.push(orderDetails);
