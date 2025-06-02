@@ -48,6 +48,8 @@ export class OrderBuilder {
     }
 
     build(): Order {
-        return this.order;
+        const builtOrder = this.order;
+        this.order = new Order();
+        return builtOrder;
     }
-} 
+}

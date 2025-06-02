@@ -69,13 +69,11 @@ export class OrderValidator {
 
     constructor() {
         this.notificationService = NotificationService.getInstance();
-        
-        // Create the chain
+
         const productValidator = new ProductValidator();
         const quantityValidator = new QuantityValidator();
         const paymentValidator = new PaymentValidator();
 
-        // Set up the chain
         productValidator
             .setNext(quantityValidator)
             .setNext(paymentValidator);
@@ -90,4 +88,4 @@ export class OrderValidator {
         }
         return isValid;
     }
-} 
+}

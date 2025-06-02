@@ -1,7 +1,5 @@
 // Import pattern implementations
-import { OrderBuilder } from './patterns/builder/OrderBuilder.js';
-import { Order as StateOrder, OrderStatus } from './patterns/state/OrderState.js';
-import { Order as ObserverOrder, CustomerObserver, WarehouseObserver } from './patterns/observer/OrderObserver.js';
+import { OrderStatus } from './patterns/state/OrderState.js';
 import { OrderFacade } from './patterns/facade/OrderFacade.js';
 import { PaymentProcessor } from './patterns/strategy/PaymentStrategy.js';
 import { OrderValidator } from './patterns/chain/OrderValidator.js';
@@ -336,7 +334,6 @@ class UIController {
     public initializeCreateOrderView(): void {
         if (!this.mainContent) return;
 
-        this.notificationService.info('Opening order creation form');
         const products = this.productCatalog.getProducts();
 
         this.mainContent.innerHTML = `
