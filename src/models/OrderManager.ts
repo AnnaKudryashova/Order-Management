@@ -21,9 +21,11 @@ export class OrderManager {
     private orders: OrderDetails[] = [];
     private nextOrderId: number = 1;
     private notificationService: NotificationService;
+    private orderFacade: OrderFacade;
 
     private constructor() {
         this.notificationService = NotificationService.getInstance();
+        this.orderFacade = new OrderFacade();
     }
 
     public static getInstance(): OrderManager {
@@ -34,24 +36,7 @@ export class OrderManager {
     }
 
     public createOrder(product: Product, quantity: number, paymentMethod: string): OrderDetails {
-        const totalAmount = product.price * quantity;
-        
-        // Use Facade to create and initialize the order
-        const orderFacade = new OrderFacade();
-        orderFacade.createOrder(product.name, quantity, paymentMethod);
-        
-        const orderDetails: OrderDetails = {
-            id: this.nextOrderId++,
-            product,
-            quantity,
-            totalAmount,
-            paymentMethod,
-            status: OrderStatus.PENDING,
-            stateOrder: orderFacade.getOrder(),
-            observerOrder: new ObserverOrder(product.name, quantity),
-            getTotalAmount: () => totalAmount
-        };
-
+        const orderDetails = this.orderFacade.createOrder(product, quantity, paymentMethod, this.nextOrderId++);
         this.orders.push(orderDetails);
         this.notificationService.success(`Order #${orderDetails.id} created successfully`);
         return orderDetails;

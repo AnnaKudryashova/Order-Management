@@ -96,7 +96,6 @@ export class UIController {
     public initializeOrdersView(): void {
         if (!this.mainContent) return;
 
-        this.notificationService.info('Loading orders list');
         const orders = this.orderManager.getOrders();
         const orderStates: OrderStates = {
             all: { color: '#808080', label: 'All Orders' },
@@ -152,28 +151,22 @@ export class UIController {
         }
 
         try {
-            const orderFacade = new OrderFacade(
-                order.product.name,
-                order.quantity,
-                order.status
-            );
-
             switch (status) {
                 case OrderStatus.PROCESSING:
-                    orderFacade.processOrder();
+                    this.orderFacade.processOrder(order);
                     break;
                 case OrderStatus.SHIPPED:
-                    orderFacade.shipOrder();
+                    this.orderFacade.shipOrder(order);
                     break;
                 case OrderStatus.DELIVERED:
-                    orderFacade.deliverOrder();
+                    this.orderFacade.deliverOrder(order);
                     break;
                 case OrderStatus.CANCELLED:
-                    orderFacade.cancelOrder();
+                    this.orderFacade.cancelOrder(order);
                     break;
             }
 
-            this.orderManager.updateOrder(orderId, orderFacade.getOrder());
+            this.orderManager.updateOrder(orderId, order.stateOrder);
             this.initializeOrdersView();
         } catch (error: any) {
             console.error('Error updating order status:', error);

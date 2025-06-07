@@ -1,3 +1,9 @@
+import { Product } from '../../models/Product.js';
+import { Order as StateOrder, OrderStatus } from '../state/OrderState.js';
+import { Order as ObserverOrder } from '../observer/OrderObserver.js';
+import { OrderDetails } from '../../models/OrderManager.js';
+import { NotificationService } from '../../services/NotificationService.js';
+
 export class Order {
     private productName: string = '';
     private quantity: number = 0;
@@ -26,30 +32,55 @@ export class Order {
 }
 
 export class OrderBuilder {
-    private order: Order;
+    private product: Product | null = null;
+    private quantity: number = 0;
+    private paymentMethod: string = '';
+    private orderId: number = 0;
+    private notificationService: NotificationService;
 
     constructor() {
-        this.order = new Order();
+        this.notificationService = NotificationService.getInstance();
     }
 
-    setProductName(name: string): OrderBuilder {
-        this.order.setProductName(name);
+    setProduct(product: Product): OrderBuilder {
+        this.product = product;
         return this;
     }
 
     setQuantity(quantity: number): OrderBuilder {
-        this.order.setQuantity(quantity);
+        this.quantity = quantity;
         return this;
     }
 
     setPaymentMethod(method: string): OrderBuilder {
-        this.order.setPaymentMethod(method);
+        this.paymentMethod = method;
         return this;
     }
 
-    build(): Order {
-        const builtOrder = this.order;
-        this.order = new Order();
-        return builtOrder;
+    setOrderId(id: number): OrderBuilder {
+        this.orderId = id;
+        return this;
+    }
+
+    build(): OrderDetails {
+        if (!this.product) {
+            throw new Error('Product is required to build an order');
+        }
+
+        const stateOrder = new StateOrder(this.product.name, this.quantity, this.notificationService);
+        const observerOrder = new ObserverOrder(this.product.name, this.quantity);
+        const totalAmount = this.product.price * this.quantity;
+
+        return {
+            id: this.orderId,
+            product: this.product,
+            quantity: this.quantity,
+            totalAmount,
+            paymentMethod: this.paymentMethod,
+            status: OrderStatus.PENDING,
+            stateOrder,
+            observerOrder,
+            getTotalAmount: () => totalAmount
+        };
     }
 }
