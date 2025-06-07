@@ -5,16 +5,10 @@ import { OrderValidator } from '../patterns/chain/OrderValidator.js';
 import { NotificationService } from '../services/NotificationService.js';
 import { ProductCatalog } from '../models/Product.js';
 import { OrderManager } from '../models/OrderManager.js';
-
-interface SystemStatus {
-    totalOrders: number;
-    pendingOrders: number;
-    processingOrders: number;
-    shippedOrders: number;
-    deliveredOrders: number;
-    cancelledOrders: number;
-    totalRevenue: number;
-}
+import { DisplayStrategy } from '../patterns/strategy/DisplayStrategy.js';
+import { SimpleDisplayStrategy } from '../patterns/strategy/SimpleDisplayStrategy.js';
+import { DetailedDisplayStrategy } from '../patterns/strategy/DetailedDisplayStrategy.js';
+import { SystemStatus } from '../types/SystemStatus.js';
 
 interface OrderState {
     color: string;
@@ -30,6 +24,7 @@ export class UIController {
     private readonly orderFacade: OrderFacade;
     private readonly paymentProcessor: PaymentProcessor;
     private readonly orderValidator: OrderValidator;
+    private displayStrategy: DisplayStrategy;
     protected readonly mainContent: HTMLElement | null;
 
     constructor() {
@@ -39,6 +34,7 @@ export class UIController {
         this.orderFacade = new OrderFacade();
         this.paymentProcessor = new PaymentProcessor(PaymentProcessor.createStrategy('credit'));
         this.orderValidator = new OrderValidator();
+        this.displayStrategy = new SimpleDisplayStrategy();
         this.mainContent = document.getElementById('mainContent');
     }
 
@@ -58,7 +54,6 @@ export class UIController {
     public initializeHomeView(): void {
         if (!this.mainContent) return;
 
-        this.notificationService.info('Navigating to home');
         const orders = this.orderManager.getOrders();
         const systemStatus = this.getSystemStatus();
 
@@ -70,89 +65,12 @@ export class UIController {
                     <button id="detailedViewBtn">Detailed View</button>
                 </div>
                 <div id="summaryContent">
-                    ${this.renderSimpleView(systemStatus)}
+                    ${this.displayStrategy.display(systemStatus, orders)}
                 </div>
             </div>
         `;
 
         this.setupViewSwitching(systemStatus, orders);
-    }
-
-    private renderSimpleView(systemStatus: SystemStatus): string {
-        return `
-            <h3>Simple Overview</h3>
-            <div class="dashboard-cards">
-                <div class="dashboard-card">
-                    <h4>Total Orders</h4>
-                    <p class="number">${systemStatus.totalOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Total Revenue</h4>
-                    <p class="number">$${systemStatus.totalRevenue.toFixed(2)}</p>
-                </div>
-            </div>
-        `;
-    }
-
-    private renderDetailedView(systemStatus: SystemStatus, orders: any[]): string {
-        return `
-            <h3>Detailed Overview</h3>
-            <div class="dashboard-cards">
-                <div class="dashboard-card">
-                    <h4>Total Orders</h4>
-                    <p class="number">${systemStatus.totalOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Total Revenue</h4>
-                    <p class="number">$${systemStatus.totalRevenue.toFixed(2)}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Pending Orders</h4>
-                    <p class="number">${systemStatus.pendingOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Processing Orders</h4>
-                    <p class="number">${systemStatus.processingOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Shipped Orders</h4>
-                    <p class="number">${systemStatus.shippedOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Delivered Orders</h4>
-                    <p class="number">${systemStatus.deliveredOrders}</p>
-                </div>
-                <div class="dashboard-card">
-                    <h4>Cancelled Orders</h4>
-                    <p class="number">${systemStatus.cancelledOrders}</p>
-                </div>
-            </div>
-            <div class="recent-orders">
-                <h4>Recent Orders</h4>
-                <table class="orders-table">
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Product</th>
-                            <th>Quantity</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${orders.slice(-5).map(order => `
-                            <tr>
-                                <td>#${order.id}</td>
-                                <td>${order.product.name}</td>
-                                <td>${order.quantity}</td>
-                                <td>$${order.getTotalAmount().toFixed(2)}</td>
-                                <td><span class="status-badge ${order.status}">${order.status}</span></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
     }
 
     private setupViewSwitching(systemStatus: SystemStatus, orders: any[]): void {
@@ -162,13 +80,15 @@ export class UIController {
 
         if (simpleViewBtn && summaryContent) {
             simpleViewBtn.addEventListener('click', () => {
-                summaryContent.innerHTML = this.renderSimpleView(systemStatus);
+                this.displayStrategy = new SimpleDisplayStrategy();
+                summaryContent.innerHTML = this.displayStrategy.display(systemStatus);
             });
         }
 
         if (detailedViewBtn && summaryContent) {
             detailedViewBtn.addEventListener('click', () => {
-                summaryContent.innerHTML = this.renderDetailedView(systemStatus, orders);
+                this.displayStrategy = new DetailedDisplayStrategy();
+                summaryContent.innerHTML = this.displayStrategy.display(systemStatus, orders);
             });
         }
     }
@@ -201,7 +121,6 @@ export class UIController {
             </div>
         `;
 
-        // Make functions available globally
         (window as any).updateOrderStatus = this.updateOrderStatus.bind(this);
         (window as any).filterOrders = this.filterOrders.bind(this);
     }
@@ -370,4 +289,4 @@ export class UIController {
             }
         });
     }
-} 
+}
