@@ -67,43 +67,23 @@ export class OrderFacade {
     }
 
     processOrder(): void {
-        try {
-            this.stateOrder.setStatus(OrderStatus.PROCESSING);
-            this.observerOrder.setStatus(OrderStatus.PROCESSING);
-        } catch (error: any) {
-            this.notificationService.error('Invalid state transition: ' + error.message);
-            throw error;
-        }
+        this.stateOrder.setStatus(OrderStatus.PROCESSING);
+        this.observerOrder.setStatus(OrderStatus.PROCESSING);
     }
 
     shipOrder(): void {
-        try {
-            this.stateOrder.setStatus(OrderStatus.SHIPPED);
-            this.observerOrder.setStatus(OrderStatus.SHIPPED);
-        } catch (error: any) {
-            this.notificationService.error('Invalid state transition: ' + error.message);
-            throw error;
-        }
+        this.stateOrder.setStatus(OrderStatus.SHIPPED);
+        this.observerOrder.setStatus(OrderStatus.SHIPPED);
     }
 
     deliverOrder(): void {
-        try {
-            this.stateOrder.setStatus(OrderStatus.DELIVERED);
-            this.observerOrder.setStatus(OrderStatus.DELIVERED);
-        } catch (error: any) {
-            this.notificationService.error('Invalid state transition: ' + error.message);
-            throw error;
-        }
+        this.stateOrder.setStatus(OrderStatus.DELIVERED);
+        this.observerOrder.setStatus(OrderStatus.DELIVERED);
     }
 
     cancelOrder(): void {
-        try {
-            this.stateOrder.setStatus(OrderStatus.CANCELLED);
-            this.observerOrder.setStatus(OrderStatus.CANCELLED);
-        } catch (error: any) {
-            this.notificationService.error('Invalid state transition: ' + error.message);
-            throw error;
-        }
+        this.stateOrder.setStatus(OrderStatus.CANCELLED);
+        this.observerOrder.setStatus(OrderStatus.CANCELLED);
     }
 
     getOrderStatus(): OrderStatus {
