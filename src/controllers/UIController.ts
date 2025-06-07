@@ -127,23 +127,23 @@ export class UIController {
     private renderOrdersList(orders: any[]): string {
         return orders.map(order => `
             <div class="order-item">
-                <h3>Order #${order.id}</h3>
-                <p>Product: ${order.product.name}</p>
-                <p>Quantity: ${order.quantity}</p>
+                <h3>Order #${order.getId()}</h3>
+                <p>Product: ${order.getProduct().name}</p>
+                <p>Quantity: ${order.getQuantity()}</p>
                 <p>Total Amount: $${order.getTotalAmount().toFixed(2)}</p>
-                <p>Payment Method: ${order.paymentMethod}</p>
-                <p>Status: <span class="status-badge ${order.status}">${order.status}</span></p>
+                <p>Payment Method: ${order.getPaymentMethod()}</p>
+                <p>Status: <span class="status-badge ${order.getStatus()}">${order.getStatus()}</span></p>
                 <div class="order-actions">
-                    <button onclick="updateOrderStatus('${order.id}', '${OrderStatus.PROCESSING}')">Process</button>
-                    <button onclick="updateOrderStatus('${order.id}', '${OrderStatus.SHIPPED}')">Ship</button>
-                    <button onclick="updateOrderStatus('${order.id}', '${OrderStatus.DELIVERED}')">Deliver</button>
-                    <button onclick="updateOrderStatus('${order.id}', '${OrderStatus.CANCELLED}')">Cancel</button>
+                    <button onclick="updateOrderStatus('${order.getId()}', '${OrderStatus.PROCESSING}')">Process</button>
+                    <button onclick="updateOrderStatus('${order.getId()}', '${OrderStatus.SHIPPED}')">Ship</button>
+                    <button onclick="updateOrderStatus('${order.getId()}', '${OrderStatus.DELIVERED}')">Deliver</button>
+                    <button onclick="updateOrderStatus('${order.getId()}', '${OrderStatus.CANCELLED}')">Cancel</button>
                 </div>
             </div>
         `).join('');
     }
 
-    private updateOrderStatus(orderId: string, status: string): void {
+    private updateOrderStatus(orderId: string, status: OrderStatus): void {
         const order = this.orderManager.getOrder(orderId);
         if (!order) {
             this.notificationService.error('Order not found');
@@ -151,23 +151,13 @@ export class UIController {
         }
 
         try {
-            switch (status) {
-                case OrderStatus.PROCESSING:
-                    this.orderFacade.processOrder(order);
-                    break;
-                case OrderStatus.SHIPPED:
-                    this.orderFacade.shipOrder(order);
-                    break;
-                case OrderStatus.DELIVERED:
-                    this.orderFacade.deliverOrder(order);
-                    break;
-                case OrderStatus.CANCELLED:
-                    this.orderFacade.cancelOrder(order);
-                    break;
+            if (order.getStatus() !== status) {
+                order.setStatus(status);
+                this.orderManager.updateOrder(orderId, status);
+                this.initializeOrdersView();
+            } else {
+                this.notificationService.info(`Order is already in ${status} status`);
             }
-
-            this.orderManager.updateOrder(orderId, order.stateOrder);
-            this.initializeOrdersView();
         } catch (error: any) {
             console.error('Error updating order status:', error);
             this.notificationService.error(error.message || 'Failed to update order status');

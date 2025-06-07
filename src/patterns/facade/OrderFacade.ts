@@ -1,9 +1,9 @@
 import { OrderBuilder } from '../builder/OrderBuilder.js';
-import { Order as StateOrder, OrderStatus } from '../state/OrderState.js';
-import { Order as ObserverOrder, CustomerObserver, WarehouseObserver } from '../observer/OrderObserver.js';
+import { OrderStatus } from '../state/OrderState.js';
+import { CustomerObserver, WarehouseObserver } from '../observer/OrderObserver.js';
 import { NotificationService } from '../../services/NotificationService.js';
 import { Product } from '../../models/Product.js';
-import { OrderDetails } from '../../models/OrderManager.js';
+import { Order } from '../../models/Order.js';
 
 export class OrderFacade {
     private orderBuilder: OrderBuilder;
@@ -18,42 +18,37 @@ export class OrderFacade {
         this.warehouseObserver = new WarehouseObserver();
     }
 
-    createOrder(product: Product, quantity: number, paymentMethod: string, orderId: number): OrderDetails {
-        const orderDetails = this.orderBuilder
+    createOrder(product: Product, quantity: number, paymentMethod: string, orderId: number): Order {
+        const order = this.orderBuilder
             .setProduct(product)
             .setQuantity(quantity)
             .setPaymentMethod(paymentMethod)
             .setOrderId(orderId)
             .build();
 
-        orderDetails.observerOrder.attach(this.customerObserver);
-        orderDetails.observerOrder.attach(this.warehouseObserver);
-        orderDetails.observerOrder.setStatus(OrderStatus.PROCESSING);
+        order.attach(this.customerObserver);
+        order.attach(this.warehouseObserver);
 
-        return orderDetails;
+        return order;
     }
 
-    processOrder(orderDetails: OrderDetails): void {
-        orderDetails.stateOrder.setStatus(OrderStatus.PROCESSING);
-        orderDetails.observerOrder.setStatus(OrderStatus.PROCESSING);
+    processOrder(order: Order): void {
+        order.setStatus(OrderStatus.PROCESSING);
     }
 
-    shipOrder(orderDetails: OrderDetails): void {
-        orderDetails.stateOrder.setStatus(OrderStatus.SHIPPED);
-        orderDetails.observerOrder.setStatus(OrderStatus.SHIPPED);
+    shipOrder(order: Order): void {
+        order.setStatus(OrderStatus.SHIPPED);
     }
 
-    deliverOrder(orderDetails: OrderDetails): void {
-        orderDetails.stateOrder.setStatus(OrderStatus.DELIVERED);
-        orderDetails.observerOrder.setStatus(OrderStatus.DELIVERED);
+    deliverOrder(order: Order): void {
+        order.setStatus(OrderStatus.DELIVERED);
     }
 
-    cancelOrder(orderDetails: OrderDetails): void {
-        orderDetails.stateOrder.setStatus(OrderStatus.CANCELLED);
-        orderDetails.observerOrder.setStatus(OrderStatus.CANCELLED);
+    cancelOrder(order: Order): void {
+        order.setStatus(OrderStatus.CANCELLED);
     }
 
-    getOrderStatus(orderDetails: OrderDetails): OrderStatus {
-        return orderDetails.stateOrder.getStatus();
+    getOrderStatus(order: Order): OrderStatus {
+        return order.getStatus();
     }
 }

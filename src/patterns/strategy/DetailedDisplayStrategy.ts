@@ -50,11 +50,11 @@ export class DetailedDisplayStrategy implements DisplayStrategy {
                     <tbody>
                         ${orders.slice(-5).map(order => `
                             <tr>
-                                <td>#${order.id}</td>
-                                <td>${order.product.name}</td>
-                                <td>${order.quantity}</td>
+                                <td>#${order.getId()}</td>
+                                <td>${order.getProduct().name}</td>
+                                <td>${order.getQuantity()}</td>
                                 <td>$${order.getTotalAmount().toFixed(2)}</td>
-                                <td><span class="status-badge ${order.status}">${order.status}</span></td>
+                                <td><span class="status-badge ${order.getStatus()}">${order.getStatus()}</span></td>
                             </tr>
                         `).join('')}
                     </tbody>

@@ -13,45 +13,15 @@ export interface OrderState {
     getStatus(): OrderStatus;
 }
 
-export class Order {
-    private state: OrderState;
-    private productName: string;
-    private quantity: number;
-    private notificationService: NotificationService;
-
-    constructor(productName: string, quantity: number, notificationService: NotificationService) {
-        this.productName = productName;
-        this.quantity = quantity;
-        this.notificationService = notificationService;
-        this.state = new PendingState(this, this.notificationService);
-    }
-
-    public setStatus(status: OrderStatus): void {
-        this.state.setStatus(status);
-    }
-
-    public getStatus(): OrderStatus {
-        return this.state.getStatus();
-    }
-
-    public getProductName(): string {
-        return this.productName;
-    }
-
-    public getQuantity(): number {
-        return this.quantity;
-    }
-
-    public transitionTo(newState: OrderState): void {
-        this.state = newState;
-    }
+export interface OrderContext {
+    transitionTo(newState: OrderState): void;
 }
 
 abstract class AbstractOrderState implements OrderState {
-    protected order: Order;
+    protected order: OrderContext;
     protected notificationService: NotificationService;
 
-    constructor(order: Order, notificationService: NotificationService) {
+    constructor(order: OrderContext, notificationService: NotificationService) {
         this.order = order;
         this.notificationService = notificationService;
     }
@@ -60,13 +30,22 @@ abstract class AbstractOrderState implements OrderState {
     abstract getStatus(): OrderStatus;
 
     protected handleInvalidTransition(currentStatus: OrderStatus, targetStatus: OrderStatus): void {
+        if (currentStatus === targetStatus) {
+            this.notificationService.info(`Order is already in ${currentStatus} status`);
+            return;
+        }
         const errorMessage = `Cannot change status from ${currentStatus} to ${targetStatus}. Invalid state transition.`;
         this.notificationService.error(errorMessage);
     }
 }
 
-class PendingState extends AbstractOrderState {
+export class PendingState extends AbstractOrderState {
     setStatus(status: OrderStatus): void {
+        if (status === OrderStatus.PENDING) {
+            this.notificationService.info('Order is already pending');
+            return;
+        }
+
         switch (status) {
             case OrderStatus.PROCESSING:
                 this.order.transitionTo(new ProcessingState(this.order, this.notificationService));
@@ -86,8 +65,13 @@ class PendingState extends AbstractOrderState {
     }
 }
 
-class ProcessingState extends AbstractOrderState {
+export class ProcessingState extends AbstractOrderState {
     setStatus(status: OrderStatus): void {
+        if (status === OrderStatus.PROCESSING) {
+            this.notificationService.info('Order is already being processed');
+            return;
+        }
+
         switch (status) {
             case OrderStatus.SHIPPED:
                 this.order.transitionTo(new ShippedState(this.order, this.notificationService));
@@ -107,8 +91,13 @@ class ProcessingState extends AbstractOrderState {
     }
 }
 
-class ShippedState extends AbstractOrderState {
+export class ShippedState extends AbstractOrderState {
     setStatus(status: OrderStatus): void {
+        if (status === OrderStatus.SHIPPED) {
+            this.notificationService.info('Order is already shipped');
+            return;
+        }
+
         switch (status) {
             case OrderStatus.DELIVERED:
                 this.order.transitionTo(new DeliveredState(this.order, this.notificationService));
@@ -128,8 +117,12 @@ class ShippedState extends AbstractOrderState {
     }
 }
 
-class DeliveredState extends AbstractOrderState {
+export class DeliveredState extends AbstractOrderState {
     setStatus(status: OrderStatus): void {
+        if (status === OrderStatus.DELIVERED) {
+            this.notificationService.info('Order is already delivered');
+            return;
+        }
         this.handleInvalidTransition(OrderStatus.DELIVERED, status);
     }
 
@@ -138,8 +131,12 @@ class DeliveredState extends AbstractOrderState {
     }
 }
 
-class CancelledState extends AbstractOrderState {
+export class CancelledState extends AbstractOrderState {
     setStatus(status: OrderStatus): void {
+        if (status === OrderStatus.CANCELLED) {
+            this.notificationService.info('Order is already cancelled');
+            return;
+        }
         this.handleInvalidTransition(OrderStatus.CANCELLED, status);
     }
 
