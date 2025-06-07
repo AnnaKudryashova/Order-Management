@@ -6,16 +6,24 @@ import { Product } from '../../models/Product.js';
 import { Order } from '../../models/Order.js';
 
 export class OrderFacade {
+    private static instance: OrderFacade;
     private orderBuilder: OrderBuilder;
     private customerObserver: CustomerObserver;
     private warehouseObserver: WarehouseObserver;
     private notificationService: NotificationService;
 
-    constructor() {
+    private constructor() {
         this.orderBuilder = new OrderBuilder();
         this.notificationService = NotificationService.getInstance();
         this.customerObserver = new CustomerObserver('Customer');
         this.warehouseObserver = new WarehouseObserver();
+    }
+
+    public static getInstance(): OrderFacade {
+        if (!OrderFacade.instance) {
+            OrderFacade.instance = new OrderFacade();
+        }
+        return OrderFacade.instance;
     }
 
     createOrder(product: Product, quantity: number, paymentMethod: string, orderId: number): Order {
@@ -28,7 +36,6 @@ export class OrderFacade {
 
         order.attach(this.customerObserver);
         order.attach(this.warehouseObserver);
-
         return order;
     }
 

@@ -49,11 +49,9 @@ export class PendingState extends AbstractOrderState {
         switch (status) {
             case OrderStatus.PROCESSING:
                 this.order.transitionTo(new ProcessingState(this.order, this.notificationService));
-                this.notificationService.info('Order is now being processed');
                 break;
             case OrderStatus.CANCELLED:
                 this.order.transitionTo(new CancelledState(this.order, this.notificationService));
-                this.notificationService.info('Order has been cancelled');
                 break;
             default:
                 this.handleInvalidTransition(OrderStatus.PENDING, status);
@@ -75,11 +73,9 @@ export class ProcessingState extends AbstractOrderState {
         switch (status) {
             case OrderStatus.SHIPPED:
                 this.order.transitionTo(new ShippedState(this.order, this.notificationService));
-                this.notificationService.info('Order has been shipped');
                 break;
             case OrderStatus.CANCELLED:
                 this.order.transitionTo(new CancelledState(this.order, this.notificationService));
-                this.notificationService.info('Order has been cancelled');
                 break;
             default:
                 this.handleInvalidTransition(OrderStatus.PROCESSING, status);
@@ -101,11 +97,9 @@ export class ShippedState extends AbstractOrderState {
         switch (status) {
             case OrderStatus.DELIVERED:
                 this.order.transitionTo(new DeliveredState(this.order, this.notificationService));
-                this.notificationService.info('Order has been delivered');
                 break;
             case OrderStatus.CANCELLED:
                 this.order.transitionTo(new CancelledState(this.order, this.notificationService));
-                this.notificationService.info('Order has been cancelled');
                 break;
             default:
                 this.handleInvalidTransition(OrderStatus.SHIPPED, status);

@@ -13,7 +13,7 @@ export class OrderManager {
 
     private constructor() {
         this.notificationService = NotificationService.getInstance();
-        this.orderFacade = new OrderFacade();
+        this.orderFacade = OrderFacade.getInstance();
     }
 
     public static getInstance(): OrderManager {
@@ -26,7 +26,6 @@ export class OrderManager {
     public createOrder(product: Product, quantity: number, paymentMethod: string): Order {
         const order = this.orderFacade.createOrder(product, quantity, paymentMethod, this.nextOrderId++);
         this.orders.push(order);
-        this.notificationService.success(`Order #${order.getId()} created successfully`);
         return order;
     }
 
@@ -42,11 +41,10 @@ export class OrderManager {
         const order = this.getOrder(id);
         if (order) {
             order.setStatus(status);
-            this.notificationService.info(`Order #${id} status updated to ${status}`);
         }
     }
 
     public getOrdersByStatus(status: OrderStatus): Order[] {
         return this.orders.filter(order => order.getStatus() === status);
     }
-} 
+}

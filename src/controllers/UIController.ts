@@ -31,7 +31,7 @@ export class UIController {
         this.notificationService = NotificationService.getInstance();
         this.productCatalog = ProductCatalog.getInstance();
         this.orderManager = OrderManager.getInstance();
-        this.orderFacade = new OrderFacade();
+        this.orderFacade = OrderFacade.getInstance();
         this.paymentProcessor = new PaymentProcessor(PaymentProcessor.createStrategy('credit'));
         this.orderValidator = new OrderValidator();
         this.displayStrategy = new SimpleDisplayStrategy();
@@ -152,7 +152,6 @@ export class UIController {
 
         try {
             if (order.getStatus() !== status) {
-                order.setStatus(status);
                 this.orderManager.updateOrder(orderId, status);
                 this.initializeOrdersView();
             } else {

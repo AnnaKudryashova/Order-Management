@@ -36,14 +36,12 @@ export class Order {
 
     public attach(observer: Observer): void {
         this.observers.push(observer);
-        this.notificationService.info('New observer attached');
     }
 
     public detach(observer: Observer): void {
         const index = this.observers.indexOf(observer);
         if (index !== -1) {
             this.observers.splice(index, 1);
-            this.notificationService.info('Observer detached');
         }
     }
 
