@@ -158,7 +158,6 @@ export class UIController {
                 this.notificationService.info(`Order is already in ${status} status`);
             }
         } catch (error: any) {
-            console.error('Error updating order status:', error);
             this.notificationService.error(error.message || 'Failed to update order status');
         }
     }
@@ -226,9 +225,9 @@ export class UIController {
             if (productSelect.value && quantityInput.value) {
                 const price = parseFloat(productSelect.options[productSelect.selectedIndex].dataset.price || '0');
                 const quantity = parseInt(quantityInput.value);
-                const total = price * quantity;
+                const total = (price * quantity).toFixed(2);
                 if (totalAmountSpan) {
-                    totalAmountSpan.textContent = `$${total.toFixed(2)}`;
+                    totalAmountSpan.textContent = `$${total}`;
                 }
             }
         };

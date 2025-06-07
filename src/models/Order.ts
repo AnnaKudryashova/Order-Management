@@ -22,8 +22,15 @@ export class Order {
     }
 
     public setStatus(status: OrderStatus): void {
-        this.state.setStatus(status);
-        this.notify();
+        if (this.state.canTransitionTo(status)) {
+            const oldStatus = this.state.getStatus();
+            this.state = this.state.transitionTo(status);
+            if (oldStatus !== status) {
+                this.notify();
+            }
+        } else {
+            throw new Error(`Cannot change status from ${this.state.getStatus()} to ${status}. Invalid state transition.`);
+        }
     }
 
     public getStatus(): OrderStatus {

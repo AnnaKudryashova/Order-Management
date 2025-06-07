@@ -2,9 +2,10 @@ import { NotificationService } from '../../services/NotificationService.js';
 
 interface IPaymentStrategy {
     processPayment(amount: number): void;
+    getType(): string;
 }
 
-class CreditCardPayment implements IPaymentStrategy {
+export class CreditCardStrategy implements IPaymentStrategy {
     private notificationService: NotificationService;
 
     constructor() {
@@ -12,11 +13,15 @@ class CreditCardPayment implements IPaymentStrategy {
     }
 
     processPayment(amount: number): void {
-        this.notificationService.info(`Processing ${amount} via Credit Card`);
+        this.notificationService.info(`Processing ${amount.toFixed(2)} via Credit Card`);
+    }
+
+    getType(): string {
+        return 'Credit Card';
     }
 }
 
-class PayPalPayment implements IPaymentStrategy {
+export class PayPalStrategy implements IPaymentStrategy {
     private notificationService: NotificationService;
 
     constructor() {
@@ -24,11 +29,15 @@ class PayPalPayment implements IPaymentStrategy {
     }
 
     processPayment(amount: number): void {
-        this.notificationService.info(`Processing ${amount} via PayPal`);
+        this.notificationService.info(`Processing ${amount.toFixed(2)} via PayPal`);
+    }
+
+    getType(): string {
+        return 'PayPal';
     }
 }
 
-class BankTransferPayment implements IPaymentStrategy {
+export class BankTransferStrategy implements IPaymentStrategy {
     private notificationService: NotificationService;
 
     constructor() {
@@ -36,7 +45,11 @@ class BankTransferPayment implements IPaymentStrategy {
     }
 
     processPayment(amount: number): void {
-        this.notificationService.info(`Processing ${amount} via Bank Transfer`);
+        this.notificationService.info(`Processing ${amount.toFixed(2)} via Bank Transfer`);
+    }
+
+    getType(): string {
+        return 'Bank Transfer';
     }
 }
 
@@ -55,8 +68,10 @@ export class PaymentProcessor {
     }
 
     processPayment(amount: number): void {
+        const formattedAmount = amount.toFixed(2);
+        console.log(`Processing ${formattedAmount} via ${this.strategy.getType()}`);
         this.strategy.processPayment(amount);
-        this.notificationService.success(`Payment of ${amount} processed successfully`);
+        console.log(`Payment of ${formattedAmount} processed successfully`);
     }
 
     static createStrategy(type: string): IPaymentStrategy {
@@ -64,11 +79,11 @@ export class PaymentProcessor {
         
         switch (type.toLowerCase()) {
             case 'credit':
-                return new CreditCardPayment();
+                return new CreditCardStrategy();
             case 'paypal':
-                return new PayPalPayment();
+                return new PayPalStrategy();
             case 'bank':
-                return new BankTransferPayment();
+                return new BankTransferStrategy();
             default:
                 notificationService.error('Invalid payment strategy type');
                 throw new Error('Invalid payment strategy type');
