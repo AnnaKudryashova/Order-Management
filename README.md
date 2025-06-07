@@ -4,23 +4,26 @@ A TypeScript-based order management system implementing various design patterns 
 
 ## Features
 
-- Product catalog management
-- Order creation and tracking
-- Real-time order status updates
-- Multiple payment methods
-- Order validation
-- Interactive dashboard
+- Product catalog management with predefined products
+- Order creation with quantity and payment method selection
+- Real-time order status updates with notifications
+- Multiple payment methods (Credit Card, PayPal, Bank Transfer)
+- Order validation through Chain of Responsibility
+- Interactive dashboard with simple and detailed views
 - Status-based order filtering
+- Real-time notifications for order status changes
+- Customer and warehouse notifications for order updates
+- Precise payment amount calculations
 
 ## Design Patterns Used
 
-- **Facade Pattern**: Simplifies the order management interface
-- **Observer Pattern**: Handles real-time order status updates
-- **State Pattern**: Manages order status transitions
-- **Strategy Pattern**: Implements different payment methods
-- **Chain of Responsibility**: Validates orders through a chain of handlers
-- **Builder Pattern**: Constructs complex order objects
-- **Singleton Pattern**: Manages global services and catalogs
+- **Facade Pattern**: `OrderFacade` simplifies the order management interface
+- **Observer Pattern**: `CustomerObserver` and `WarehouseObserver` handle real-time order status updates
+- **State Pattern**: Manages order status transitions (Pending → Processing → Shipped → Delivered)
+- **Strategy Pattern**: Implements different payment methods and display strategies
+- **Chain of Responsibility**: `OrderValidator` validates orders through a chain of handlers
+- **Builder Pattern**: `OrderBuilder` constructs complex order objects
+- **Singleton Pattern**: Manages global services (`NotificationService`, `OrderManager`, `ProductCatalog`, `OrderFacade`)
 
 ## Prerequisites
 
@@ -57,23 +60,53 @@ The application will be available at `http://localhost:3000`
 ```
 order-management/
 ├── src/
-│   ├── models/          # Data models
+│   ├── models/          # Data models (Order, Product)
 │   ├── patterns/        # Design pattern implementations
-│   ├── services/        # Utility services
+│   │   ├── builder/     # OrderBuilder implementation
+│   │   ├── chain/       # OrderValidator implementation
+│   │   ├── facade/      # OrderFacade implementation
+│   │   ├── observer/    # OrderObserver implementation
+│   │   ├── state/       # OrderState implementation
+│   │   └── strategy/    # Payment and Display strategies
+│   ├── services/        # NotificationService
 │   ├── styles/          # CSS styles
+│   ├── controllers/     # UIController
 │   └── main.ts          # Application entry point
 ├── dist/                # Compiled JavaScript files
-├── tests/               # Test files
 ├── package.json         # Project configuration
 ├── tsconfig.json        # TypeScript configuration
 └── README.md           # Project documentation
 ```
 
+## Key Features in Detail
+
+### Order Management
+- Create orders with product selection, quantity, and payment method
+- Track order status with real-time updates
+- Filter orders by status
+- View order details including total amount
+
+### Payment Processing
+- Multiple payment methods (Credit Card, PayPal, Bank Transfer)
+- Precise amount calculations with 2 decimal places
+- Payment strategy switching at runtime
+
+### Notifications
+- Real-time status change notifications
+- Customer notifications for order updates
+- Warehouse notifications for order processing
+- Error notifications for invalid operations
+
+### User Interface
+- Interactive dashboard with order statistics
+- Simple and detailed view options
+- Status-based filtering
+- Order creation form with real-time total calculation
+
 ## Available Scripts
 
 - `npm run build` - Compiles TypeScript files
 - `npm start` - Starts the development server
-- `npm test` - Runs tests (if configured)
 
 ## Contributing
 
