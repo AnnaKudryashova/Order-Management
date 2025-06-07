@@ -13,6 +13,7 @@ export interface OrderDetails {
     status: OrderStatus;
     stateOrder: StateOrder;
     observerOrder: ObserverOrder;
+    getTotalAmount(): number;
 }
 
 export class OrderManager {
@@ -47,7 +48,8 @@ export class OrderManager {
             paymentMethod,
             status: OrderStatus.PENDING,
             stateOrder: orderFacade.getOrder(),
-            observerOrder: new ObserverOrder(product.name, quantity)
+            observerOrder: new ObserverOrder(product.name, quantity),
+            getTotalAmount: () => totalAmount
         };
 
         this.orders.push(orderDetails);
