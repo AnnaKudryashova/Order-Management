@@ -64,15 +64,12 @@ export class OrderFacade {
         this.observerOrder.attach(this.customerObserver);
         this.observerOrder.attach(this.warehouseObserver);
         this.observerOrder.setStatus(OrderStatus.PROCESSING);
-
-        this.notificationService.success('Order created successfully: ' + order.getDetails());
     }
 
     processOrder(): void {
         try {
             this.stateOrder.setStatus(OrderStatus.PROCESSING);
             this.observerOrder.setStatus(OrderStatus.PROCESSING);
-            this.notificationService.info('Order is being processed');
         } catch (error: any) {
             this.notificationService.error('Invalid state transition: ' + error.message);
             throw error;
@@ -83,7 +80,6 @@ export class OrderFacade {
         try {
             this.stateOrder.setStatus(OrderStatus.SHIPPED);
             this.observerOrder.setStatus(OrderStatus.SHIPPED);
-            this.notificationService.success('Order has been shipped');
         } catch (error: any) {
             this.notificationService.error('Invalid state transition: ' + error.message);
             throw error;
@@ -94,7 +90,6 @@ export class OrderFacade {
         try {
             this.stateOrder.setStatus(OrderStatus.DELIVERED);
             this.observerOrder.setStatus(OrderStatus.DELIVERED);
-            this.notificationService.success('Order has been delivered');
         } catch (error: any) {
             this.notificationService.error('Invalid state transition: ' + error.message);
             throw error;
@@ -105,7 +100,6 @@ export class OrderFacade {
         try {
             this.stateOrder.setStatus(OrderStatus.CANCELLED);
             this.observerOrder.setStatus(OrderStatus.CANCELLED);
-            this.notificationService.warning('Order has been cancelled');
         } catch (error: any) {
             this.notificationService.error('Invalid state transition: ' + error.message);
             throw error;

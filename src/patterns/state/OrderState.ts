@@ -61,7 +61,7 @@ abstract class AbstractOrderState implements OrderState {
 
     protected handleInvalidTransition(currentStatus: OrderStatus, targetStatus: OrderStatus): void {
         const errorMessage = `Cannot change status from ${currentStatus} to ${targetStatus}. Invalid state transition.`;
-        this.notificationService.error(errorMessage);
+        // this.notificationService.error(errorMessage);
         throw new Error(errorMessage);
     }
 }
