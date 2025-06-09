@@ -1,5 +1,3 @@
-export type NotificationType = 'success' | 'error' | 'warning' | 'info';
-
 export class NotificationService {
     private static instance: NotificationService;
     private notificationArea: HTMLElement;
@@ -46,4 +44,6 @@ export class NotificationService {
     public info(message: string, duration?: number): void {
         this.show(message, 'info', duration);
     }
-} 
+}
+
+type NotificationType = 'success' | 'error' | 'warning' | 'info';

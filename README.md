@@ -4,51 +4,55 @@ A TypeScript-based order management system implementing various design patterns 
 
 ## Features
 
-- Product catalog management with predefined products
-- Order creation with quantity and payment method selection
-- Real-time order status updates with notifications
-- Multiple payment methods (Credit Card, PayPal, Bank Transfer)
-- Order validation through Chain of Responsibility
-- Interactive dashboard with simple and detailed views
-- Status-based order filtering
-- Real-time notifications for order status changes
-- Customer and warehouse notifications for order updates
-- Precise payment amount calculations
+-   Product catalog management with predefined products
+-   Order creation with quantity and payment method selection
+-   Real-time order status updates with notifications
+-   Multiple payment methods (Credit Card, PayPal, Bank Transfer)
+-   Order validation through Chain of Responsibility
+-   Interactive dashboard with simple and detailed views
+-   Status-based order filtering
+-   Real-time notifications for order status changes
+-   Customer and warehouse notifications for order updates
+-   Precise payment amount calculations
 
 ## Design Patterns Used
 
-- **Facade Pattern**: `OrderFacade` simplifies the order management interface
-- **Observer Pattern**: `CustomerObserver` and `WarehouseObserver` handle real-time order status updates
-- **State Pattern**: Manages order status transitions (Pending → Processing → Shipped → Delivered)
-- **Strategy Pattern**: Implements different payment methods and display strategies
-- **Chain of Responsibility**: `OrderValidator` validates orders through a chain of handlers
-- **Builder Pattern**: `OrderBuilder` constructs complex order objects
-- **Singleton Pattern**: Manages global services (`NotificationService`, `OrderManager`, `ProductCatalog`, `OrderFacade`)
+-   **Facade Pattern**: `OrderFacade` simplifies the order management interface
+-   **Observer Pattern**: `CustomerObserver` and `WarehouseObserver` handle real-time order status updates
+-   **State Pattern**: Manages order status transitions (Pending → Processing → Shipped → Delivered)
+-   **Strategy Pattern**: Implements different payment methods and display strategies
+-   **Chain of Responsibility**: `OrderValidator` validates orders through a chain of handlers
+-   **Builder Pattern**: `OrderBuilder` constructs complex order objects
+-   **Singleton Pattern**: Manages global services (`NotificationService`, `OrderManager`, `ProductCatalog`, `OrderFacade`)
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
-- npm (v6 or higher)
+-   Node.js (v14 or higher)
+-   npm (v6 or higher)
 
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/yourusername/order-management.git
 cd order-management
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Build the project:
+
 ```bash
 npm run build
 ```
 
 4. Start the server:
+
 ```bash
 npm start
 ```
@@ -81,32 +85,36 @@ order-management/
 ## Key Features in Detail
 
 ### Order Management
-- Create orders with product selection, quantity, and payment method
-- Track order status with real-time updates
-- Filter orders by status
-- View order details including total amount
+
+-   Create orders with product selection, quantity, and payment method
+-   Track order status with real-time updates
+-   Filter orders by status
+-   View order details including total amount
 
 ### Payment Processing
-- Multiple payment methods (Credit Card, PayPal, Bank Transfer)
-- Precise amount calculations with 2 decimal places
-- Payment strategy switching at runtime
+
+-   Multiple payment methods (Credit Card, PayPal, Bank Transfer)
+-   Precise amount calculations with 2 decimal places
+-   Payment strategy switching at runtime
 
 ### Notifications
-- Real-time status change notifications
-- Customer notifications for order updates
-- Warehouse notifications for order processing
-- Error notifications for invalid operations
+
+-   Real-time status change notifications
+-   Customer notifications for order updates
+-   Warehouse notifications for order processing
+-   Error notifications for invalid operations
 
 ### User Interface
-- Interactive dashboard with order statistics
-- Simple and detailed view options
-- Status-based filtering
-- Order creation form with real-time total calculation
+
+-   Interactive dashboard with order statistics
+-   Simple and detailed view options
+-   Status-based filtering
+-   Order creation form with real-time total calculation
 
 ## Available Scripts
 
-- `npm run build` - Compiles TypeScript files
-- `npm start` - Starts the development server
+-   `npm run build` - Compiles TypeScript files
+-   `npm start` - Starts the development server
 
 ## Contributing
 
@@ -115,7 +123,3 @@ order-management/
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
